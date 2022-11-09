@@ -30,4 +30,4 @@ We also include notebooks to run this code:
 * NQFS_Quadratic.ipynb - NQFS applied to a quadratic model, equivalent to a regularized Klein-Gordon model
 * NQFS_Generic.ipynb - NQFS applied to a generic QFT Hamiltonian
 
-These can be run on Google Colab with access to GPU.
+Upon downloading the ./modules folder, these notebooks can be run on Google Colab with access to GPU.
