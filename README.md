@@ -10,7 +10,7 @@ where each $n$-particle wave function is a product of two [Deep Sets](https://ar
 
 $$ \varphi_n^\text{NQFS}(\textbf{x}_n) = \frac{1}{L^{n/2}} \cdot f_1\big( \\{x_i\\} _{i=1}^n \big) \cdot f_2\big( \\{x_i-x_j\\} _{i < j} \big), $$
 
-This architecture is permutation invariant and able to accept an arbitrary number of inputs, which crucially allows us to parameterize the infinitely many $n$-particle wave functions comprising a bosninc quantum field state. It is ultimately inspired by [recent](https://journals.aps.org/prresearch/abstract/10.1103/PhysRevResearch.4.023138) [works](https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.127.022502) that apply Deep Sets in the context of neural-network quantum states.
+This architecture is permutation invariant and able to accept an arbitrary number of inputs, which crucially allows us to parameterize the infinitely many $n$-particle wave functions comprising a bosonic quantum field state. It is ultimately inspired by [recent](https://journals.aps.org/prresearch/abstract/10.1103/PhysRevResearch.4.023138) [works](https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.127.022502) that apply Deep Sets in the context of neural-network quantum states.
 
 We employ an algorithm for variational Monte Carlo in Fock space to estimate and minimize the energy of a NQFS, and ultimately approximate the ground state. We demonstrate the applicability of NQFS to a variety of field thoeries by benchmarking on the Lieb-Liniger model, the Calogero-Sutherland model, and a regularized Klein-Gordon model.
 
