@@ -17,7 +17,7 @@ We employ an algorithm for variational Monte Carlo in Fock space to estimate and
 
 # Code Description
 This repository contains the code for NQFS. The folder ./modules contains the following classes:
-* deep_sets.py - Class for the Deep Sets architecture
+* `deep_sets.py` - Class for the Deep Sets architecture
 * nqfs_ll.py - Class for NQFS, specially developed for the Lieb-Liniger model
 * nqfs_cs.py - Class for NQFS, specially developed for the Calogero-Sutherland model
 * nqfs_quad.py - Class for NQFS, specially developed for a quadratic model that is equivalent to a regularized Klein-Gordon model
