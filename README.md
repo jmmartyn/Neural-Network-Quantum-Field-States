@@ -18,16 +18,16 @@ We employ an algorithm for variational Monte Carlo in Fock space to estimate and
 # Code Description
 This repository contains the code for NQFS. The folder ./modules contains the following classes:
 * `deep_sets.py` - Class for the Deep Sets architecture
-* nqfs_ll.py - Class for NQFS, specially developed for the Lieb-Liniger model
-* nqfs_cs.py - Class for NQFS, specially developed for the Calogero-Sutherland model
-* nqfs_quad.py - Class for NQFS, specially developed for a quadratic model that is equivalent to a regularized Klein-Gordon model
-* nqfs.py - Class for NQFS, applied to a generic QFT Hamiltonian
+* `nqfs_ll.py` - Class for NQFS, specially developed for the Lieb-Liniger model
+* `nqfs_cs.py` - Class for NQFS, specially developed for the Calogero-Sutherland model
+* `nqfs_quad.py` - Class for NQFS, specially developed for a quadratic model that is equivalent to a regularized Klein-Gordon model
+* `nqfs.py` - Class for NQFS, applied to a generic QFT Hamiltonian
 
 
 We also include notebooks to run this code: 
-* NQFS_LiebLiniger.ipynb - NQFS applied to the Lieb-Liniger model 
-* NQFS_CalogeroSutherland.ipynb - NQFS applied to the Calogero-Sutherland model
-* NQFS_Quadratic.ipynb - NQFS applied to a quadratic model, equivalent to a regularized Klein-Gordon model
-* NQFS_Generic.ipynb - NQFS applied to a generic QFT Hamiltonian
+* `NQFS_LiebLiniger.ipynb` - NQFS applied to the Lieb-Liniger model 
+* `NQFS_CalogeroSutherland.ipynb` - NQFS applied to the Calogero-Sutherland model
+* `NQFS_Quadratic.ipynb` - NQFS applied to a quadratic model, equivalent to a regularized Klein-Gordon model
+* `NQFS_Generic.ipynb` - NQFS applied to a generic QFT Hamiltonian
 
 Upon downloading the ./modules folder, these notebooks can be run on Google Colab with access to GPU.
