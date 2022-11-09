@@ -6,7 +6,7 @@ In [Neural-Network Quantum States for Continuum Quantum Field Theory](link), we 
 
 $$ |\Psi^{\text{NQFS}}\rangle = \sum_{n=0}^\infty \int d^nx \ \varphi_n^\text{NQFS}(\textbf{x}_n) |\textbf{x}_n\rangle, $$
 
-where each $n$-particle wave function is a product of two [Deep Sets](https://arxiv.org/abs/1703.06114) neural- network architectures -- one that accounts for particle positions $x_i$, and the other for particle separations $\{x_i - x_j \}_{i<j}$:
+where each $n$-particle wave function is a product of two [Deep Sets](https://arxiv.org/abs/1703.06114) neural- network architectures -- one that accounts for particle positions $x$, and the other for particle separations $x$:
 
 $$ \varphi_n^\text{NQFS}(\textbf{x}_n) = \frac{1}{L^{n/2}} \cdot f_1\big( \{x_i\}_{i=1}^n \big) \cdot f_2\big( \{x_i-x_j\}_{i < j} \big), $$
 
