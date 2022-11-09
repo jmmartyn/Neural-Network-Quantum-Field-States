@@ -6,7 +6,7 @@ In [Neural-Network Quantum States for Continuum Quantum Field Theory](link), we 
 
 $$ |\Psi^{\text{NQFS}}\rangle = \sum_{n=0}^\infty \int d^nx \ \varphi_n^\text{NQFS}(\textbf{x}_n) |\textbf{x}_n\rangle, $$
 
-where each $n$-particle wave function is a product of two [Deep Sets](https://arxiv.org/abs/1703.06114) neural- network architectures -- one that accounts for particle positions $\\{x_i\\}$, and the other for particle separations $\\{ x_i-x_j\\}$:
+where each $n$-particle wave function is a product of two [Deep Sets](https://arxiv.org/abs/1703.06114) neural network architectures -- one that accounts for particle positions $\\{x_i\\} _{i=1}^n$, and the other for particle separations $\\{ x_i-x_j\\} _{i<j}$:
 
 $$ \varphi_n^\text{NQFS}(\textbf{x}_n) = \frac{1}{L^{n/2}} \cdot f_1\big( \\{x_i\\} _{i=1}^n \big) \cdot f_2\big( \\{x_i-x_j\\} _{i < j} \big), $$
 
@@ -16,6 +16,18 @@ We employ an algorithm for variational Monte Carlo in Fock space to estimate and
 
 
 # Code Description
-This repository contains the classes for NQFS
+This repository contains the code for NQFS. ./modules contains the following classes:
+* deep_sets.py - Class for the Deep Sets architecture
+* nqfs_ll.py - Class for NQFS, specially developed for the Lieb-Liniger model
+* nqfs_cs.py - Class for NQFS, specially developed for the Calogero-Sutherland model
+* nqfs_quad.py - Class for NQFS, specially developed for a quadratic model that is equivalent to a regularized Klein-Gordon model
+* nqfs.py - Class for NQFS, applied to a generic QFT Hamiltonian
 
-We also icnlude ntoebooks to run theis code. These can be run on Google Colab with access to GPU
+
+We also include notebooks to run this code: 
+* NQFS_LiebLiniger.ipynb
+* NQFS_CalogeroSutherland.ipynb
+* NQFS_Quadratic.ipynb
+* NQFS_Generic.ipynb
+
+These can be run on Google Colab with access to GPU.
