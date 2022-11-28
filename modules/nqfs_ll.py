@@ -3,6 +3,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import matplotlib.pyplot as plt
+from scipy.optimize import root
 from deep_sets import Deep_Sets
 
 
@@ -207,8 +208,8 @@ class NQFS_LL():
         jastrows = torch.abs(interparticle_seps) + 1 / (m * g)
         val = torch.sum(torch.log(jastrows).nan_to_num(), axis=1)[:, None]
 
-        # Accounts for normalization factor
-        if x.shape[1] > 0:
+        # Accounts for normalization factor in Tonks-Girardeau limit
+        if x.shape[1] > 0 and g > 1e4:
             log_Selberg_vals = [(2 * torch.special.gammaln(0 * n + 1 + j) + \
                                  torch.special.gammaln(0 * n + 2 + j) - \
                                  torch.special.gammaln(1 + n + j)) \
@@ -869,7 +870,7 @@ class NQFS_LL():
         ax2.set_xlabel('Iteration', fontsize=8)
         ax2.legend(prop={'size': 7})
         ax2.set_xticklabels(ax2.get_xticks().astype(int), fontsize=6)
-        ax2.set_yticklabels(np.round(ax2.get_yticks(), 2), fontsize=6)
+        ax2.set_yticklabels(np.round(ax2.get_yticks(), 10), fontsize=6)
 
         fig.tight_layout()
         fig.show()
@@ -916,7 +917,7 @@ class NQFS_LL():
         ax2.set_xlabel('Iteration', fontsize=8)
         ax2.legend(prop={'size': 7})
         ax2.set_xticklabels(ax2.get_xticks().astype(int), fontsize=6)
-        ax2.set_yticklabels(np.round(ax2.get_yticks(), 2), fontsize=6)
+        ax2.set_yticklabels(np.round(ax2.get_yticks(), 10), fontsize=6)
 
         fig.tight_layout()
         fig.show()
@@ -1259,6 +1260,78 @@ class NQFS_LL():
         IE_density_local = torch.cat(IE_density_local)[:, None]
         return IE_density_local
 
+    def LL_GS_Energy(self, m, g, L, n):
+        '''
+        Determines the ground state energy of the Lieb-Liniger model in a box (at
+        fixed particle number) by solving the transcendental equations outlined in
+        "Boundary Energy of a Bose Gas in One Dimension" by M. Gaudin
+
+        Parameters:
+          m: particle mass
+          g: Lieb-Liniger interaction strength
+          L: system size
+          n: number of particles
+
+        Returns:
+          E: Ground state energy
+        '''
+
+        c = 2 * m * g
+        n_alpha = np.ones(n)  # The ground state occurs when n_alpha = 1 for all alpha
+
+        # Functions defining the transcendental equations
+        def funcs(k_alpha):
+            k_alpha = np.array(k_alpha)
+            difs = (k_alpha[:, None] - k_alpha[None, :])
+            difs += 1e-20 * np.identity(k_alpha.shape[0])
+            sums = (k_alpha[:, None] + k_alpha[None, :])
+            sum_vals = np.arctan(c / difs) + np.arctan(c / sums)
+            np.fill_diagonal(sum_vals, 0.)
+
+            f = k_alpha * L - np.pi * n_alpha - np.sum(sum_vals, axis=1)
+            f = list(f)
+            return f
+
+        # Solve transcendental equations for k_alpha; energy is 1/(2*m)*sum(k_alpha**2)
+        sol = root(funcs, np.pi * np.arange(1, n + 1) / L)
+        k_alpha = sol.x
+        E = 1 / (2 * m) * np.sum(k_alpha ** 2)
+
+        return E
+
+    def Exact_energy_and_n(self, m, mu, g, L):
+        '''
+        Determines the exact ground state energy and particel number of the
+        Lieb-Liniger model in a box (in the grand canonical ensemble)
+
+        Parameters:
+          m: particle mass
+          mu: chemical potential
+          g: Lieb-Liniger interaction strength
+          L: system size
+          n: number of particles
+
+        Returns:
+          E: Ground state energy
+          n: Ground state particle number
+        '''
+
+        E = 0
+        n = 0
+
+        # Scans through particle number sectors until the ground state is located
+        while 1 == 1:
+            n_tmp = n + 1
+            E_tmp = self.LL_GS_Energy(m, g, L, n_tmp) - mu * n_tmp
+
+            if E_tmp < E:
+                E = E_tmp
+                n = n_tmp
+            else:
+                break
+
+        return E, n
+
     def TG_n(self, L, m, mu):
         '''
         Calculates the particle number of the Tonks-Girardeau ground state
@@ -1439,7 +1512,7 @@ class NQFS_LL():
         ax.set_xlabel('x', fontsize=8)
         ax.legend(prop={'size': 7})
         ax.set_xticklabels(np.round(ax.get_xticks(), 2), fontsize=6)
-        ax.set_yticklabels(np.round(ax.get_yticks(), 2), fontsize=6)
+        ax.set_yticklabels(np.round(ax.get_yticks(), 4), fontsize=6)
 
         fig.tight_layout()
         fig.show()
