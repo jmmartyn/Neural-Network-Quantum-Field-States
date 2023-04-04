@@ -903,7 +903,7 @@ class NQFS_CS():
         ax2.set_xlabel('Iteration', fontsize=8)
         ax2.legend(prop={'size': 7})
         ax2.set_xticklabels(ax2.get_xticks().astype(int), fontsize=6)
-        ax2.set_yticklabels(np.round(ax2.get_yticks(), 2), fontsize=6)
+        ax2.set_yticklabels(np.round(ax2.get_yticks(), 10), fontsize=6)
 
         fig.tight_layout()
         fig.show()
@@ -950,7 +950,7 @@ class NQFS_CS():
         ax2.set_xlabel('Iteration', fontsize=8)
         ax2.legend(prop={'size': 7})
         ax2.set_xticklabels(ax2.get_xticks().astype(int), fontsize=6)
-        ax2.set_yticklabels(np.round(ax2.get_yticks(), 2), fontsize=6)
+        ax2.set_yticklabels(np.round(ax2.get_yticks(), 10), fontsize=6)
 
         fig.tight_layout()
         fig.show()
@@ -1107,6 +1107,152 @@ class NQFS_CS():
 
         fig.tight_layout()
         fig.show()
+
+    def Number_density_function(self, N_pts, x_sorted, chain_idx_sorted, n_chains,
+                                GPU_device, m, g, N_int, batch_size):
+        '''
+        Estimates the number density function across the range [0,L], and the
+        standard deviations thereof
+
+        Parameters:
+          N_pts: number of points at which the number density is estimated over
+            the range [0,L]
+          x_sorted: a list of tensors, the nth of which contains the sampled
+            particle configurations of n particles and is of dimension (#, n),
+            where # denotes the number of samples drawn of particle number n
+          chain_idx_sorted: a list of tensors denoting the MCMC chain from
+            which the corresponding particle configuration in x_sorted came.
+          n_chains: number of MCMC chains
+          GPU_device: the GPU device under use (i.e. cuda)
+          N_int: number of integration points used to compute the numerical integral
+            needed for local number density calculation
+          batch_size: the size of batches over which the local number density is
+            estimated; performing the numerical integral is memory intensive, and
+            hence we batch over entries to save memory
+
+        Returns:
+          num_densities: the estimated number densities
+          num_densities_std: the standard deviation of the estimated
+            number densities
+        '''
+
+        # Evaluates number density across N_pts points
+        xs = np.linspace(0, self.L, N_pts)
+        num_densities = np.zeros(N_pts)
+        num_densities_std = np.zeros(N_pts)
+        for i in range(N_pts):
+            print('Evaluating number density at point ' + str(i + 1) + \
+                  '/' + str(N_pts))
+            x_eval = xs[i]
+            num_density, num_density_std = self.Number_density(x_eval, x_sorted, \
+                  chain_idx_sorted, n_chains, GPU_device, m, g, N_int, batch_size)
+            num_densities[i] = num_density
+            num_densities_std[i] = num_density_std
+
+        return num_densities, num_densities_std
+
+    def Number_density(self, x_eval, x_sorted, chain_idx_sorted, n_chains,
+                       GPU_device, m, g, N_int, batch_size):
+        '''
+        Estimates the number density at x_eval and their
+        standard deviations
+
+        Parameters:
+          x_eval: a scalar value of the point at which the number density is to be
+            estimated
+          x_sorted: a list of tensors, the nth of which contains the sampled
+            particle configurations of n particles and is of dimension (#, n),
+            where # denotes the number of samples drawn of particle number n
+          chain_idx_sorted: a list of tensors denoting the MCMC chain from
+            which the corresponding particle configuration in x_sorted came.
+          n_chains: number of MCMC chains
+          GPU_device: the GPU device under use (i.e. cuda)
+          N_int: number of integration points used to compute the numerical integral
+            needed for local number density calculation
+          batch_size: the size of batches over which the local number density is
+            estimated; performing the numerical integral is memory intensive, and
+            hence we batch over entries to save memory
+
+        Returns:
+          num_density: the estimated number density
+          num_density_std: the standard deviation of the estimated number density
+        '''
+
+        # Calculates local number densities
+        Local_num_densities = []
+        for x in x_sorted:
+            num_density_local = self.Local_number_density(x_eval,\
+                                x, GPU_device, m, g, N_int, batch_size)
+            Local_num_densities.append(num_density_local)
+
+        # Estimated number density and KE density
+        Local_num_densities = torch.cat(Local_num_densities)
+        num_density = torch.mean(Local_num_densities)
+
+        # Calculates standard deviations by binning across the MCMC chains
+        chain_idx_sorted_flat = torch.cat(chain_idx_sorted)
+        num_density_means_chains = \
+            torch.tensor([torch.sum(Local_num_densities[:, 0] * (chain_idx_sorted_flat == i)) / \
+                          torch.sum(chain_idx_sorted_flat == i) \
+                          for i in range(n_chains)], device=GPU_device)
+        num_density_std = torch.std(num_density_means_chains) / (n_chains ** 0.5)
+
+        return num_density, num_density_std
+
+    def Local_number_density(self, x_eval, x, GPU_device, m, g,
+                             N_int, batch_size):
+        '''
+        Calculates the local number densities of the configurations in x
+
+        Parameters:
+          x_eval: a scalar value of the point at which the number density is to be
+            estimated
+          x: a tensor of dimension (n_samples, n_particles) representing
+            n_samples samples of n_particles particle positions
+          GPU_device: the GPU device under use (i.e. cuda)
+          m: particle mass
+          g: CS interaction strength
+          N_int: number of integration points used to compute the numerical integral
+            \int dx_i |\varphi_n|^2 and evaluate the marginal distribution
+          batch_size: the size of batches over which the local number density is
+            estimated; performing the numerical integral is memory intensive, and
+            hence we batch over entries to save memory
+
+        Returns:
+          num_density_local: a tensor of dimension (n_samples, 1) containing the
+            local number densities at x_eval of the configurations in x
+        '''
+
+        x_eval_tensor = torch.cuda.FloatTensor(1).fill_(x_eval)
+        # The points across which the numerical integral is calculated
+        x_int_points = torch.linspace(0, self.L, N_int, device=GPU_device)
+
+        num_density_local = []
+        for i in range(torch.ceil(x.shape[0] / batch_size)):
+            # Computes log_Psi for numerator
+            x_tmp = x[i * batch_size:(i + 1) * batch_size, :]
+            x_tmp_numerator = torch.cat((x_eval_tensor.repeat(x_tmp.shape[0], 1),
+                                         x_tmp[:, 1:]), axis=1)
+            log_Psi_numerator_val = self.log_Psi(x_tmp_numerator, m, g)[:, 0].detach()
+
+            # Computes log_Psi for integral over distribution
+            x_int = torch.cat((x_int_points[:, None, None].repeat(1, x_tmp.shape[0], 1),
+                               x_tmp[None, :, 1:].repeat(N_int, 1, 1)), axis=2)
+            x_int = x_int.reshape(N_int * x_tmp.shape[0], -1)
+            log_Psi_integrand_vals = self.log_Psi(x_int, m, g).detach()
+            log_Psi_integrand_vals = log_Psi_integrand_vals.reshape(N_int,
+                                                                    x_tmp.shape[0], 1)
+
+            # Calculates local number density
+            integrand_vals = torch.exp(2 * log_Psi_integrand_vals[:, :, 0])
+            integrals = torch.trapz(integrand_vals, dx=self.L / (N_int - 1), dim=0)
+            num_density_local.append(x.shape[1] * torch.exp(2 * log_Psi_numerator_val) \
+                                     / integrals)
+            del x_tmp, x_tmp_numerator, log_Psi_numerator_val, x_int
+            del log_Psi_integrand_vals, integrand_vals, integrals
+
+        num_density_local = torch.cat(num_density_local)[:, None]
+        return num_density_local
 
     def CS_n(self, L, m, mu, g):
         '''
