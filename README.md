@@ -1,4 +1,4 @@
-# Neural Network Quantum Field States
+# Neural-Network Quantum Field States
 
 In recent years, machine learning has inspired the application of neural networks to problems in quantum physics, leading to a new variational ansatz known as a [neural-network quantum state](https://www.science.org/doi/10.1126/science.aag2302) (NQS). Predicated on the variational principle, this ansatz parameterizes a wave function by neural networks, which are optimized over to approximate the ground state of a system. NQSs have seen successful applications to [spin chains](https://www.nature.com/articles/s41567-019-0545-1), [quantum chemistry](https://journals.aps.org/prresearch/abstract/10.1103/PhysRevResearch.2.033429), and beyond.
 
